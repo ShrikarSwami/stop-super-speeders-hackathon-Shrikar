@@ -1,10 +1,32 @@
 # Backend Architecture Documentation
-
+Hello homeboys! Welcome to my documentation for the backend of my code if you have any questions hit me up as though I am sigeon pex 7326889157 ;)
 ## Overview
 
-The backend folder (`backend/`) contains all server-side logic, data processing pipelines, and database schema definitions for the SAFENY Super Speeder Detection System.
+The backend folder (`backend/`) contains all server-side logic—essentially all the processing that happens behind the scenes. This includes three main components:
 
----
+### 1. **Data Processing Pipelines**
+Think of a pipeline like an assembly line for data. When you upload a CSV file with traffic violations:
+- **Step 1 (Cleaning):** The raw CSV data gets validated and standardized. Column names are normalized, missing values are handled, and bad data is removed
+- **Step 2 (Ingestion):** The cleaned data gets loaded into DuckDB (our database). This converts thousands of spreadsheet rows into organized database tables
+- **Step 3 (Detection):** The system queries the database to identify super speeders and warning drivers based on violation thresholds
+
+Example: Raw CSV (100 rows) → Cleaned Data (95 valid rows) → Database Tables → Detection Results (2 super speeders found)
+
+### 2. **Database Schema**
+A schema is the blueprint for how data is organized. It defines:
+- **What tables exist** (e.g., `fct_violations` stores all violation records, `dim_driver` stores driver info)
+- **What columns each table has** (e.g., violation date, license plate, points assessed)
+- **How tables connect** (e.g., a violation record points to a driver record)
+- **What indexes exist** (for fast searching, like indexing by driver_id)
+
+In our system, we have 6 main tables with 145,000+ violation records across 77,000+ unique drivers.
+
+### 3. **Business Logic**
+The system automatically detects:
+- **Super Speeders:** Drivers with ≥16 camera tickets in 12 months OR ≥11 violation points in 18 months
+- **Warning Drivers:** Drivers approaching these thresholds (12-15 tickets OR 8-10 points)
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## File Structure
 
@@ -22,20 +44,20 @@ backend/
     └── test_super_speeder_detector.py  # Unit tests
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Core Modules
 
-### `app.py` - FastAPI Web Server
+### `app.py` - FastAPI Web Server 
 
-**Purpose:** Main web application entry point
+**Purpose:** Main web application entry point so users can upload CSVs and view results as well as other resources.
 
 **Key Responsibilities:**
-- Handle HTTP requests (upload, display, resources)
-- Manage file uploads and validation
-- Orchestrate data pipeline (clean → ingest → detect)
-- Render Jinja2 templates
-- Error handling and logging
+- Handle HTTP requests (upload, display, resources) - Make the web app web
+- Manage file uploads and validation - This is where the magic happens this essentially is the controller that ties everything together for the backend
+- Orchestrate data pipeline (clean → ingest → detect) - Call other modules to process data (obvious what is does)
+- Render Jinja2 templates for HTML pages - What Jinja2 is used for is basicaly templating engine for python that allow us to generate web pages dynamically or make them look pretty
+- Error handling and logging - Log errors and important events so if there is any issues we as a group can debug them 
 
 **Main Routes:**
 | Route | Method | Purpose |
@@ -48,8 +70,8 @@ backend/
 | `/health` | GET | Health check |
 
 **Dependencies:**
-- FastAPI, Uvicorn
-- Jinja2Templates
+- FastAPI, Uvicorn (server side framework FastAPI is used to build APIs with Python and Uvicorn is an ASGI server to run FastAPI apps and ASGI is a specification for Python that allows for internal communication between the web server and web applications)
+- Jinja2Templates (This helps render the templates and make them look pretty)
 - Pathlib (path management)
 
 **Running:**
@@ -59,7 +81,7 @@ python app.py
 # Server runs on http://localhost:8000
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### `src/cleaning.py` - Data Cleaning Module
 
@@ -82,7 +104,7 @@ DataCleaner.clean_traffic_violations(df: pd.DataFrame) → pd.DataFrame
 
 clean_and_export(input_dir, output_dir, file_patterns, strict_mode) → Tuple[pd.DataFrame, pd.DataFrame]
   - Batch processes multiple files
-  - Exports to Parquet format
+  - Exports to Parquet format which is efficient for storage and querying which is useful for us because we are using duckdb as our database and duckdb works really well with parquet files
   - Returns (speed_cameras_df, violations_df)
 ```
 
@@ -101,7 +123,7 @@ python src/cleaning.py \
   --strict
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### `src/ingestion.py` - DuckDB Ingestion Pipeline
 
@@ -144,7 +166,7 @@ python src/ingestion.py \
   --fresh
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### `src/super_speeder_detector.py` - Detection Engine
 
@@ -177,7 +199,7 @@ $$12 \leq \text{Speed Camera Tickets} < 16 \quad \text{OR} \quad 8 \leq \text{Po
 
 **SQL Queries:** Dynamic temporal queries using date subtraction
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### `sql/01_schema.sql` - Database Schema
 
@@ -208,7 +230,7 @@ $$12 \leq \text{Speed Camera Tickets} < 16 \quad \text{OR} \quad 8 \leq \text{Po
 
 **Key Indexes:** driver_id, violation_date, data_source
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### `tests/test_super_speeder_detector.py` - Unit Tests
 
@@ -246,7 +268,7 @@ python -m pytest tests/ -v
 
 **Results:** All 7 tests passing on sample data (1,332 super speeders, 227 warning drivers)
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Data Flow Diagram
 
@@ -268,7 +290,7 @@ python -m pytest tests/ -v
 [results.html: display findings]
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Configuration & Paths
 
@@ -287,7 +309,7 @@ DUCKDB_PATH = DATA_DIR / "duckdb" / "test.duckdb"
 SCHEMA_FILE = BASE_DIR / "sql" / "01_schema.sql"
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Performance Notes
 
@@ -296,7 +318,7 @@ SCHEMA_FILE = BASE_DIR / "sql" / "01_schema.sql"
 - **Parquet caching:** Avoids repeated CSV parsing
 - **Indexes:** On driver_id and violation_date for fast filtering
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Dependencies
 
@@ -316,7 +338,7 @@ pip install -r requirements.txt
 uv sync
 ```
 
----
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Future Enhancements
 
